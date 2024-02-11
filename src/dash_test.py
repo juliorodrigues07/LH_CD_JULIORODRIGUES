@@ -120,10 +120,10 @@ def update_by_district(district_slctd):
      Output(component_id='map4', component_property='figure')],
     [Input(component_id='slct_roomtype', component_property='value')]
 )
-def update_by_district(district_slctd):
+def update_by_roomtype(slct_roomtype):
 
     rooms = df.copy()
-    rooms = rooms[rooms["Room Type"].isin(district_slctd)]
+    rooms = rooms[rooms["Room Type"].isin(slct_roomtype)]
 
     graph1 = rooms.groupby(('Room Type'))[['Price']].mean().reset_index()
     fig1 = px.bar(graph1, x='Room Type', y='Price', color='Room Type', title="Average price per district")
