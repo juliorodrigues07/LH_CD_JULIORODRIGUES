@@ -29,7 +29,7 @@ def load_dataset(filename: str) -> pd.DataFrame:
 st.title('Reviews at American Districts Properties')
 col1, col2 = st.columns(2)
 
-df = load_dataset('pricing')
+df = load_dataset('teste_indicium_precificacao')
 df = df.drop(['id'], axis='columns')
 
 df['Last Review'] = pd.to_datetime(df['Last Review'])

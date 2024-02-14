@@ -8,7 +8,7 @@ import pandas as pd
 
 
 app = Dash(__name__)
-df = pd.read_csv('../datasets/pricing.csv')
+df = pd.read_csv('../datasets/teste_indicium_precificacao.csv')
 df = df.rename(columns={
     'nome': 'Name',
     'host_id': 'Host ID',

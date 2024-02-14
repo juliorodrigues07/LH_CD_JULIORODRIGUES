@@ -33,7 +33,7 @@ st.title('Rent Pricing at American Districts')
 col1, col2 = st.columns(2)
 col3, col4 = st.columns(2)
 
-df = load_dataset('pricing')
+df = load_dataset('teste_indicium_precificacao')
 df = df.drop(['id'], axis='columns')
 
 st.sidebar.image('./indicium.png', width=200)
