@@ -42,14 +42,28 @@ You first need to be in the _dashboards_ directory to run the commands.
 
       streamlit run Home.py
 
-- With Dash Plotly (only dashboards):
+- With Dash Plotly (only dashboard):
 
       python3 dash_test.py
+
+### Interactive Dashboard (Streamlit)
+![Interactive](/docs/interactive.png)
+
+### Static Dashboard (Streamlit)
+![Static](/docs/static.png)
 
 ## 2. Data Mining
 
 - To visualize the notebook, its cells and run them, click ![here](https://colab.research.google.com/github/juliorodrigues07/rent_pricing/blob/master/notebook/LH_CD_JULIORODRIGUES.ipynb) (visualization in GitHub is ![broken](https://github.com/juliorodrigues07/LH_CD_JULIORODRIGUES/tree/master/notebook));
 
-- To run locally, you first need to be in the _src_ directory to run the commands.
+- To run the notebook locally:
+  
+     1. Install ![VS Code](https://code.visualstudio.com/download);
+     2. Open the notebook (_.ipynb_) file in it;
+     3. Create the virtual environment and install the dependencies as shown before;
+     4. Make sure the the right Python interpreter is configured;
+     5. In VS Code press Ctrl + Shift + P and select the recommended or venv option;
+
+- To run python scripts locally, you first need to be in the _src_ directory to run the commands.
 
       python3 main.py
