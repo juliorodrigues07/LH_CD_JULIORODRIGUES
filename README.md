@@ -1,3 +1,4 @@
+[![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=for-the-badge&logo=jupyter&logoColor=ffffff)](https://jupyter.org/)
 [![Python 3.10.12](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3106/)
 # Rent Pricing
 EDA on rent pricing at american districts with interactive dashboards, along with develelopment of a ML regression model.
@@ -54,11 +55,11 @@ You first need to be in the _dashboards_ directory to run the commands.
 
 ## 2. Data Mining
 
-- To visualize the notebook, its cells and run them, click ![here](https://colab.research.google.com/github/juliorodrigues07/rent_pricing/blob/master/notebook/LH_CD_JULIORODRIGUES.ipynb) (visualization in GitHub is ![broken](https://github.com/juliorodrigues07/LH_CD_JULIORODRIGUES/tree/master/notebook));
+- To visualize the notebook, its cells and run them, click [here](https://colab.research.google.com/github/juliorodrigues07/rent_pricing/blob/master/notebook/LH_CD_JULIORODRIGUES.ipynb) (visualization in GitHub is [broken](https://github.com/juliorodrigues07/LH_CD_JULIORODRIGUES/tree/master/notebook));
 
 - To run the notebook locally:
   
-     1. Install ![VS Code](https://code.visualstudio.com/download);
+     1. Install [VS Code](https://code.visualstudio.com/download);
      2. Open the notebook (_.ipynb_) file in it;
      3. Create the virtual environment and install the dependencies as shown before;
      4. Make sure the the right Python interpreter is configured;
