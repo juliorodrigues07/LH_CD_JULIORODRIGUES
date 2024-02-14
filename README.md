@@ -1,6 +1,6 @@
 [![Python 3.10.12](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3106/)
 # Rent Pricing
-EDA on rent pricing at american districts with interactive dashboards.
+EDA on rent pricing at american districts with interactive dashboards, along with develelopment of a ML regression model.
  
 # Requirements
 
@@ -16,11 +16,11 @@ EDA on rent pricing at american districts with interactive dashboards.
 
 1. Clone the repository
 
-       git clone https://github.com/juliorodrigues07/rent_pricing.git
+       git clone git@github.com:juliorodrigues07/LH_CD_JULIORODRIGUES.git
 
 2. Unzip the repository
 
-       unzip rent_pricing-master.zip && cd rent_pricing-master/src
+       unzip LH_CD_JULIORODRIGUES-master.zip && cd LH_CD_JULIORODRIGUES-master
 
 2. Create a virtual environment
 
@@ -34,16 +34,22 @@ EDA on rent pricing at american districts with interactive dashboards.
 
        pip install -r requirements.txt
 
-5. Run the application (Inside _src_ directory)
+## 1. Regressor and Dashboards
+
+You first need to be in the _dashboards_ directory to run the commands.
 
 - With Streamlit:
 
       streamlit run Home.py
 
-- With Dash Plotly:
+- With Dash Plotly (only dashboards):
 
       python3 dash_test.py
 
-5. Deactivate the virtual environment
+## 2. Data Mining
 
-       deactivate
+- To visualize the notebook, its cells and run them, click ![here](https://colab.research.google.com/github/juliorodrigues07/rent_pricing/blob/master/notebook/LH_CD_JULIORODRIGUES.ipynb) (visualization in GitHub is ![broken](https://github.com/juliorodrigues07/LH_CD_JULIORODRIGUES/tree/master/notebook));
+
+- To run locally, you first need to be in the _src_ directory to run the commands.
+
+      python3 main.py
