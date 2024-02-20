@@ -1,2 +1,0 @@
-Optimal number of features: 13
-Best features: ['Host ID', 'Host Name', 'Neighborhood', 'District', 'Latitude', 'Longitude', 'Room Type', 'Minimum Nights', 'Reviews', 'Last Review', 'Monthly Reviews', 'Number of Listings', 'Days Available']
