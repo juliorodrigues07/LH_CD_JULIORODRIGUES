@@ -157,7 +157,7 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
         instance[feature] = binned_feature
 
     # Prediction
-    model = joblib.load(f'{getcwd()}/../models/{algorithm}_model.pkl')
+    model = load_model(model_name=algorithm)
     prediction = model.predict(instance)
     price = round(prediction[0], 2)
 
