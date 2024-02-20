@@ -11,7 +11,6 @@ charset-normalizer==3.3.2
 click==8.1.7
 contourpy==1.2.0
 cycler==0.12.1
-dash==2.15.0
 dash-core-components==2.0.0
 dash-html-components==2.0.0
 dash-table==5.0.0
@@ -34,13 +33,10 @@ jsonschema==4.21.1
 jsonschema-specifications==2023.12.1
 kaleido==0.2.1
 kiwisolver==1.4.5
-lightgbm==4.3.0
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
-matplotlib==3.8.2
 mccabe==0.7.0
 mdurl==0.1.2
-mlxtend==0.23.1
 nest-asyncio==1.6.0
 nodeenv==1.8.0
 numpy==1.26.4
@@ -49,12 +45,10 @@ pandas==2.2.0
 pillow==10.2.0
 platformdirs==4.2.0
 plotly==5.18.0
-pre-commit==3.6.0
 protobuf==3.20.3
 pyarrow==15.0.0
 pydeck==0.8.1b0
 Pygments==2.17.2
-pylint==3.0.3
 Pympler==1.0.1
 pyparsing==3.1.1
 PySocks==1.7.1
@@ -68,7 +62,6 @@ rich==13.7.0
 rpds-py==0.17.1
 scikit-learn==1.4.0
 scipy==1.12.0
-seaborn==0.13.2
 semver==3.0.2
 six==1.16.0
 smmap==5.0.1
@@ -90,6 +83,4 @@ validators==0.22.0
 virtualenv==20.25.0
 watchdog==4.0.0
 Werkzeug==3.0.1
-wordcloud==1.9.3
-xgboost==2.0.3
 zipp==3.17.0
