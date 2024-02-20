@@ -11,6 +11,7 @@ from cerberus import Validator
 import streamlit as st
 import pandas as pd
 import joblib
+import gdown
 
 
 st.set_page_config(layout="wide", page_title="Rent Pricing", page_icon=":heavy_dollar_sign:")
@@ -20,23 +21,27 @@ filterwarnings('ignore', category=FutureWarning)
 @st.cache_data
 def load_model(model_name: str) -> any:
 
-    try:
-        model = joblib.load(f'{getcwd()}/../models/{model_name}_model.pkl')
-    except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
-        print("Model not found or doesn't exists!")
-        exit()
+    if model_name == 'lgbm':
+        file_id = '1Ea5kawEMXyo3bSo9S02zeb4-mCoAS3ml'
+    elif model_name == 'xgb':
+        file_id = '1uzpcx-IlBbUJCsbp5pn9eu7zOtkrR2o0'
+    else:
+        file_id = '1bHBSZVl0d3DQ-OACrj6F98sLkCy5GGkC'
+
+    model_file = 'model.pkl'
+    gdown.download(f'https://drive.google.com/uc?id={file_id}', model_file)
+    model = joblib.load(model_file)
 
     return model
 
 
 @st.cache_data
-def load_dataset(filename: str) -> pd.DataFrame:
+def load_dataset() -> pd.DataFrame:
 
-    try:
-        df = pd.read_csv(f'{getcwd()}/../datasets/{filename}.csv')
-    except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
-        print("Dataset not found or doesn't exists!")
-        exit()
+    output_file = 'pricing.csv'
+    file_id = '1j8lxdtKR5ELOl6ksapQwzribYchz-0UG'
+    gdown.download(f'https://drive.google.com/uc?id={file_id}', output_file)
+    df = pd.read_csv(output_file)
 
     df = df.rename(columns={
         'nome': 'Name',
@@ -59,7 +64,7 @@ def load_dataset(filename: str) -> pd.DataFrame:
 
 
 if 'df' not in st.session_state:
-    st.session_state['df'] = load_dataset('pricing')
+    st.session_state['df'] = load_dataset()
 
 
 def validate_input(input_data: Dict) -> (bool, Dict):
@@ -139,7 +144,11 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
             instance = discretize_values(instance, col)
 
     # Gets the binning threshold file generated in preprocessing
-    with open(f'{getcwd()}/../models/bins.json', 'r') as file:
+    bins_file = 'bins.json'
+    bins_id = '100l-8fZth8oueQIEExsiGy4qj4FGA2QP'
+    gdown.download(f'https://drive.google.com/uc?id={bins_id}', bins_file)
+
+    with open(bins_file, 'r') as file:
         bins = json.load(file)
 
     # Binning mapping
