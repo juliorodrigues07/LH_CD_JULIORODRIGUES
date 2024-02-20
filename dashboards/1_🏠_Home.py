@@ -166,11 +166,10 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 
 if __name__ == '__main__':
 
-    try:
-        st.sidebar.image('../assets/stock.png', width=280)
-    except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
-        print("Image not found or doesn't exists!")
-        exit()
+    img_file = 'stock.png'
+    file_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
+    gdown.download(f'https://drive.google.com/uc?id={file_id}', img_file)
+    st.sidebar.image(img_file, width=280)
 
     # Property form
     form1 = st.form(key='options')
