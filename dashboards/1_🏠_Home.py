@@ -240,7 +240,6 @@ if __name__ == '__main__':
 
     check, errors = validate_input(input_data=input_data)
     if submit_button is True and check is True:
-        print(input_data)
         price = predict_instance(input_data=input_data, algorithm=model_name)
         prediction.success(f'Price: US$ {price}')
 
