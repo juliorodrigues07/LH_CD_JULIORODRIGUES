@@ -65,6 +65,7 @@ In this section, you can see the interactive and static dashboards screens made 
     .
     ├── README.md                       # Project's documentation
     ├── requirements.txt                # File containing all the required dependencies to run the project
+    ├── assets                          # Directory containing images used in README.md and in the deployed app
     └── dashboards                      # Directory containing the web application
         ├── 1_🏠_Home.py                <- Main page with the price predictor
         └── pages                       # Child pages directory
