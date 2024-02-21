@@ -2,6 +2,9 @@
 [![Python 3.10.12](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3106/)
 # Rent Pricing
 EDA on rent pricing at american districts with interactive dashboards, along with develelopment of a ML regression model.
+
+- **To see the complete project, click [HERE](https://github.com/juliorodrigues07/LH_CD_JULIORODRIGUES/tree/extras)**;
+- **To see the deployed application, click on the following button: [![Deploy](https://img.shields.io/website-up-down-green-red/http/monip.org.svg)](https://rent-pricing.streamlit.app/)**
  
 # Requirements
 
