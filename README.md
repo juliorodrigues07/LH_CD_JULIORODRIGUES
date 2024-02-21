@@ -100,35 +100,36 @@ In this section, you can see the interactive and static dashboards screens made 
     .
     ├── README.md                       # Project's documentation
     ├── requirements.txt                # File containing all the required dependencies to run the project
+    ├── plots                           # Directory containing all the graph plots generated in EDA
+    ├── assets                          # Directory containing images used in README.md and in the deployed app
     ├── notebooks                       # Directory containing project's jupyter notebooks
     |   ├── 1_eda.ipynb
     |   ├── 2_preprocessing.ipynb
-    |   ├── 3_ml_methods.ipynb
+    |   └── 3_ml_methods.ipynb
     ├── dashboards                      # Directory containing the web application
     |   ├── 1_🏠_Home.py                <- Main page with the price predictor
     |   ├── pages                       # Child pages directory
     |   |   ├── 2_📈_Interactive.py     <- Script responsible for generating the interactive dashboards
-    |   |   ├── 3_📊_Static.py          <- Script responsible for generating the static dashboards
-    |   ├── dash_test.py                <- Interactive and static dashboards made with Dash library
+    |   |   └── 3_📊_Static.py          <- Script responsible for generating the static dashboards
+    |   └── dash_test.py                <- Interactive and static dashboards made with Dash library
     ├── src                             # Directory containing all the python scripts for data mining
     |   ├── main.py                     <- Main script for evaluating ML models
-    |   ├── datamining                  # Directory containing scripts responsible for all KDD process
-    |   |   ├── data_visualization.py
-    |   |   ├── preprocessing.py
-    |   |   ├── ml_methods.py
-    |   |   ├── __init__.py
+    |   └── datamining                  # Directory containing scripts responsible for all KDD process
+    |       ├── data_visualization.py
+    |       ├── preprocessing.py
+    |       ├── ml_methods.py
+    |       └── __init__.py
     ├── datasets                        # Directory containing all used or generated datasets in the project
     |   ├── pricing.csv                 <- Original dataset
     |   ├── reduced.parquet             <- Result after applying memory optimizing techniques on the original dataset
     |   ├── filled.parquet              <- Result after inputting missing values in the reduced.parquet dataset
     |   ├── preprocessed.parquet        <- Result after applying preprocessing techniques on the filled.parquet dataset
-    |   ├── feature_selected.parquet    <- Final result after applying feature selection on the preprocessed.parquet dataset
-    ├── models                          # Directory containing all generated models in the project
-    |   ├── lgbm_model.pkl              <- LightGBM algorithm fitted model
-    |   ├── xgb_model.pkl               <- XGBoost algorithm fitted model
-    |   ├── histgb_model.pkl            <- HistGradientBoosting algorithm fitted model
-    ├── plots                           # Directory containing all the graph plots generated in EDA
-    └── assets                          # Directory containing images used in README.md and in the deployed app
+    |   └── feature_selected.parquet    <- Final result after applying feature selection on the preprocessed.parquet dataset
+    └── models                          # Directory containing all generated models in the project
+        ├── lgbm_model.pkl              <- LightGBM algorithm fitted model
+        ├── xgb_model.pkl               <- XGBoost algorithm fitted model
+        └── histgb_model.pkl            <- HistGradientBoosting algorithm fitted model
+
 
 
 # 5. Outro
