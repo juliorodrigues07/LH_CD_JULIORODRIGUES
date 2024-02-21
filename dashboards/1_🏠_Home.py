@@ -21,15 +21,17 @@ filterwarnings('ignore', category=FutureWarning)
 @st.cache_data
 def load_model(model_name: str) -> any:
 
-    if model_name == 'lgbm':
-        file_id = '1Ea5kawEMXyo3bSo9S02zeb4-mCoAS3ml'
-    elif model_name == 'xgb':
-        file_id = '1uzpcx-IlBbUJCsbp5pn9eu7zOtkrR2o0'
-    else:
-        file_id = '1bHBSZVl0d3DQ-OACrj6F98sLkCy5GGkC'
+    match model_name:
+        case 'LightGBM':
+            model_id = '1Ea5kawEMXyo3bSo9S02zeb4-mCoAS3ml'
+        case 'XGBoost':
+            model_id = '1uzpcx-IlBbUJCsbp5pn9eu7zOtkrR2o0'
+        case _:
+            print("Model doesn't exists!")
+            exit()
 
     model_file = 'model.pkl'
-    gdown.download(f'https://drive.google.com/uc?id={file_id}', model_file)
+    gdown.download(f'https://drive.google.com/uc?id={model_id}', model_file)
     model = joblib.load(model_file)
 
     return model
@@ -39,8 +41,8 @@ def load_model(model_name: str) -> any:
 def load_dataset() -> pd.DataFrame:
 
     output_file = 'pricing.csv'
-    file_id = '1j8lxdtKR5ELOl6ksapQwzribYchz-0UG'
-    gdown.download(f'https://drive.google.com/uc?id={file_id}', output_file)
+    dataset_id = '1j8lxdtKR5ELOl6ksapQwzribYchz-0UG'
+    gdown.download(f'https://drive.google.com/uc?id={dataset_id}', output_file)
     df = pd.read_csv(output_file)
 
     df = df.rename(columns={
@@ -88,7 +90,7 @@ def validate_input(input_data: Dict) -> (bool, Dict):
         'monthly_reviews': {'type': 'float', 'min': 0.0, 'required': True, 'empty': False},
         'host_listings': {'type': 'integer', 'min': 1, 'required': True, 'empty': False},
         'availability': {'type': 'integer', 'min': 0, 'max': 365, 'required': True, 'empty': False},
-        'model_name': {'type': 'string', 'allowed': ['LightGBM', 'XGBoost', 'HistGradientBoosting'],
+        'model_name': {'type': 'string', 'allowed': ['LightGBM', 'XGBoost'],
                        'required': True, 'empty': False}
     }
     input_validator = Validator(schema)
@@ -167,8 +169,8 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 if __name__ == '__main__':
 
     img_file = 'stock.png'
-    file_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
-    gdown.download(f'https://drive.google.com/uc?id={file_id}', img_file)
+    img_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
+    gdown.download(f'https://drive.google.com/uc?id={img_id}', img_file)
     st.sidebar.image(img_file, width=280)
 
     # Property form
@@ -211,7 +213,7 @@ if __name__ == '__main__':
 
     availability = form1.slider(label='Days Available per Year', min_value=0, max_value=365, value=70)
 
-    algorithm = form1.selectbox(label='Select the ML Algorithm', options=['LightGBM', 'XGBoost', 'HistGradientBoosting'])
+    algorithm = form1.selectbox(label='Select the ML Algorithm', options=['LightGBM', 'XGBoost'])
     submit_button = form1.form_submit_button('Predict')
     prediction = st.container()
 
@@ -234,21 +236,9 @@ if __name__ == '__main__':
         'model_name': algorithm
     }
 
-    model_name = str()
-    match algorithm:
-        case 'LightGBM':
-            model_name = 'lgbm'
-        case 'XGBoost':
-            model_name = 'xgb'
-        case 'HistGradientBoosting':
-            model_name = 'histgb'
-        case _:
-            print("ML model not available or doesn't exists")
-            exit()
-
     check, errors = validate_input(input_data=input_data)
     if submit_button is True and check is True:
-        price = predict_instance(input_data=input_data, algorithm=model_name)
+        price = predict_instance(input_data=input_data, algorithm=algorithm)
         prediction.success(f'Price: US$ {price}')
 
     elif submit_button is True and check is False:
