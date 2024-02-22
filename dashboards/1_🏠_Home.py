@@ -18,6 +18,35 @@ st.set_page_config(layout="wide", page_title="Rent Pricing", page_icon=":heavy_d
 filterwarnings('ignore', category=FutureWarning)
 
 
+def load_img() -> any:
+
+    img_file = 'stock.png'
+    img_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
+    gdown.download(f'https://drive.google.com/uc?id={img_id}', img_file)
+
+    return img_file
+
+
+if 'img_file' not in st.session_state:
+    st.session_state['img_file'] = load_img()
+
+
+def load_bins() -> any:
+
+    bins_file = 'bins.json'
+    bins_id = '100l-8fZth8oueQIEExsiGy4qj4FGA2QP'
+    gdown.download(f'https://drive.google.com/uc?id={bins_id}', bins_file)
+
+    return bins_file
+
+
+# Gets the binning threshold file generated in preprocessing
+if 'bins_file' not in st.session_state:
+    st.session_state['bins_file'] = load_bins()
+with open(st.session_state['bins_file'], 'r') as file:
+    bins = json.load(file)
+
+
 @st.cache_data
 def load_model(model_name: str) -> any:
 
@@ -72,8 +101,6 @@ if 'df' not in st.session_state:
 def validate_input(input_data: Dict) -> (bool, Dict):
 
     schema = {
-        'id': {'type': 'integer', 'required': False, 'empty': True},
-        'prop_name': {'type': 'string', 'required': False, 'empty': True},
         'host_id': {'type': 'integer', 'required': True, 'empty': False},
         'host_name': {'type': 'string', 'required': True, 'empty': False},
         'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Neighborhood'].unique()),
@@ -119,8 +146,6 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     input_data.pop('model_name')
     instance = pd.DataFrame([input_data])
     instance = instance.rename(columns={
-        'id': 'ID',
-        'prop_name': 'Name',
         'host_id': 'Host ID',
         'host_name': 'Host Name',
         'borough': 'Neighborhood',
@@ -137,21 +162,12 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     })
 
     # Preprocessing and discretization
-    instance = instance.drop(['ID', 'Name'], axis='columns')
     instance['Last Review'] = pd.to_datetime(instance['Last Review'])
     instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
 
     for col in instance.columns.values:
         if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
             instance = discretize_values(instance, col)
-
-    # Gets the binning threshold file generated in preprocessing
-    bins_file = 'bins.json'
-    bins_id = '100l-8fZth8oueQIEExsiGy4qj4FGA2QP'
-    gdown.download(f'https://drive.google.com/uc?id={bins_id}', bins_file)
-
-    with open(bins_file, 'r') as file:
-        bins = json.load(file)
 
     # Binning mapping
     for feature in bins:
@@ -168,19 +184,15 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 
 if __name__ == '__main__':
 
-    img_file = 'stock.png'
-    img_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
-    gdown.download(f'https://drive.google.com/uc?id={img_id}', img_file)
-    st.sidebar.image(img_file, width=280)
+    st.sidebar.image(st.session_state['img_file'], width=280)
 
     # Property form
     form1 = st.form(key='options')
-    form1.title('NY Price Regressor')
+    form1.title('NY Price Predictor')
     form1.header('Property Specifications')
-    col1, col2 = form1.columns(2)
+    col1, col2, col3, col4 = form1.columns(4)
 
     # Inputs, buttons, select boxes, slider and warnings
-    prop_id = col1.number_input(label="Property ID", value=1, placeholder='Insert the number here...')
     host_id = col1.number_input(label="Host ID", value=1, placeholder='Insert the number here...')
 
     latitude = col1.number_input(label='Latitude', value=0.000000, placeholder='Insert the number here...')
@@ -189,37 +201,34 @@ if __name__ == '__main__':
     longitude = col1.number_input(label='Longitude', value=0.000000, placeholder='Insert the number here...')
     longitude_warning = col1.container()
 
-    min_nights = col1.number_input(label='Minimum Nights', value=1, placeholder='Insert the number here...')
-    minnights_warning = col1.container()
-
-    reviews = col1.number_input(label='Number of Reviews', value=0, placeholder='Insert the number here...')
-    reviews_warning = col1.container()
-
-    monthly_reviews = col1.number_input(label='Monthly Reviews Rate', value=0.0, placeholder='Insert the number here...')
-    monthlyreviews_warning = col1.container()
-
-    prop_name = col2.text_input(label='Property Name', placeholder='Insert the name here...').strip()
-
     host_name = col2.text_input(label='Host Name', placeholder='Insert the name here...').strip()
     hostname_warning = col2.container()
 
-    borough = col2.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
-    district = col2.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
-    room_type = col2.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
-    last_review = col2.date_input(label='Last Review Date', value=None, max_value=datetime.now(), format="DD/MM/YYYY")
+    min_nights = col2.number_input(label='Minimum Nights', value=1, placeholder='Insert the number here...')
+    minnights_warning = col2.container()
 
     host_listings = col2.number_input(label='Listings per Host', value=1, placeholder='Insert the number here...')
     hostlistings_warning = col2.container()
 
-    availability = form1.slider(label='Days Available per Year', min_value=0, max_value=365, value=70)
+    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
+    district = col3.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
+    room_type = col3.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
 
+    reviews = col4.number_input(label='Number of Reviews', value=0, placeholder='Insert the number here...')
+    reviews_warning = col4.container()
+
+    monthly_reviews = col4.number_input(label='Monthly Reviews Rate', value=0.0, placeholder='Insert the number here...')
+    monthlyreviews_warning = col4.container()
+
+    last_review = col4.date_input(label='Last Review Date', value=None, max_value=datetime.now(), format="DD/MM/YYYY")
+
+    availability = form1.slider(label='Days Available per Year', min_value=0, max_value=365, value=70)
     algorithm = form1.selectbox(label='Select the ML Algorithm', options=['LightGBM', 'XGBoost'])
     submit_button = form1.form_submit_button('Predict')
+
     prediction = st.container()
 
     input_data = {
-        'id': prop_id,
-        'prop_name': prop_name,
         'host_id': host_id,
         'host_name': host_name,
         'borough': borough,
@@ -242,22 +251,21 @@ if __name__ == '__main__':
         prediction.success(f'Price: US$ {price}')
 
     elif submit_button is True and check is False:
-        for key in input_data.keys():
-            if key in errors.keys():
-                match key:
-                    case 'latitude':
-                        latitude_warning.error('Latitude values must be between -90 and 90!')
-                    case 'longitude':
-                        longitude_warning.error('Longitude values must be between -180 and 180!')
-                    case 'min_nights':
-                        minnights_warning.error('Minimum nights must be greater than 0!')
-                    case 'reviews':
-                        reviews_warning.error('Number of reviews must not be negative!')
-                    case 'monthly_reviews':
-                        monthlyreviews_warning.error('Monthly reviews rate must not be negative!')
-                    case 'host_name':
-                        hostname_warning.error('Host name cannot be empty!')
-                    case 'host_listings':
-                        hostlistings_warning.error('Number of listings per host must be greater than 0!')
-                    case _:
-                        print("Data doesn't exist!")
+        for key in errors.keys():
+            match key:
+                case 'latitude':
+                    latitude_warning.error('Latitude values must be between -90 and 90!')
+                case 'longitude':
+                    longitude_warning.error('Longitude values must be between -180 and 180!')
+                case 'min_nights':
+                    minnights_warning.error('Minimum nights must be greater than 0!')
+                case 'reviews':
+                    reviews_warning.error('Number of reviews must not be negative!')
+                case 'monthly_reviews':
+                    monthlyreviews_warning.error('Monthly reviews rate must not be negative!')
+                case 'host_name':
+                    hostname_warning.error('Host name cannot be empty!')
+                case 'host_listings':
+                    hostlistings_warning.error('Number of listings per host must be greater than 0!')
+                case _:
+                    print("Data doesn't exist!")
