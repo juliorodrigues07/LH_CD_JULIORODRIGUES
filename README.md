@@ -136,7 +136,7 @@ In this section, you can see the interactive and static dashboards screens made 
 
 - To uninstall all dependencies, run the following command:
 
-      pip uninstall -r requirements.txt
+      pip uninstall -r requirements.txt -y
 
 - To deactivate the virtual environment, run the following command:
 
