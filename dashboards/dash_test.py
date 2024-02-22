@@ -5,10 +5,11 @@ from dash import Dash
 from dash import html
 from dash import dcc
 import pandas as pd
+import numpy as np
 
 
 app = Dash(__name__)
-df = pd.read_csv('../datasets/teste_indicium_precificacao.csv')
+df = pd.read_csv('../datasets/pricing.csv')
 df = df.rename(columns={
     'nome': 'Name',
     'host_id': 'Host ID',
@@ -19,7 +20,7 @@ df = df.rename(columns={
     'longitude': 'Longitude',
     'room_type': 'Room Type',
     'price': 'Price',
-    'minimo_noites': 'Minimun Nights',
+    'minimo_noites': 'Minimum Nights',
     'numero_de_reviews': 'Reviews',
     'ultima_review': 'Last Review',
     'reviews_por_mes': 'Monthly Reviews',
@@ -29,11 +30,15 @@ df = df.rename(columns={
 df = df.drop(['id'], axis='columns')
 
 static1 = df.groupby(('Neighborhood'))[['Monthly Reviews']].mean().reset_index()
-static2 = df.groupby(['Neighborhood', 'Room Type'])[['Minimun Nights']].mean().reset_index()
+static2 = df.groupby(['Neighborhood', 'Room Type'])[['Minimum Nights']].mean().reset_index()
+static3 = df.groupby(['Minimum Nights'])[['Price']].mean().reset_index()
+static3['Price'] = np.log2(static3['Price'])
+static4 = df.groupby(['Days Available'])[['Price']].mean().reset_index()
+static5 = df.groupby(['Room Type'])[['Price']].sum().reset_index()
 
 app.layout = html.Div([
 
-    html.H1("Rent Pricing at American Districts", style={'text-align': 'center'}),
+    html.H1("Rent Pricing at NY boroughs", style={'text-align': 'center'}),
 
     html.H3("Interactive Graphs by districts", style={'text-align': 'center'}),
 
@@ -57,7 +62,7 @@ app.layout = html.Div([
         dcc.Graph(id='map1'),
         dcc.Graph(id='map2')
         ],
-        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center'}
+        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly'}
     ),
 
     html.H3("Interactive Graphs by room type", style={'text-align': 'center', 'margin-top': '50px'}),
@@ -80,16 +85,30 @@ app.layout = html.Div([
         dcc.Graph(id='map3'),
         dcc.Graph(id='map4')
         ],
-        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center'}
+        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly'}
     ),
 
     html.H3("Static Graphs", style={'text-align': 'center', 'margin-top': '50px'}),
 
     html.Div(children=[
         dcc.Graph(id='map5', figure=px.bar(static1, x='Neighborhood', y='Monthly Reviews', color='Neighborhood', title="Average montlhy reviews per district")),
-        dcc.Graph(id='map6', figure=px.bar(static2, x='Neighborhood', y='Minimun Nights', color='Room Type', title="Average minimum nights required"))
+        dcc.Graph(id='map6', figure=px.bar(static2, x='Neighborhood', y='Minimum Nights', color='Room Type', title="Average minimum nights required"))
         ],
-        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center'}
+        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly', 'padding': '20px'}
+    ),
+
+    html.Div(children=[
+        dcc.Graph(id='map7', figure=px.bar(static3, x='Minimum Nights', y='Price', title="Average price by minimum nights required",
+                                           labels={'Price': 'Price (log 2)'})),
+        dcc.Graph(id='map8', figure=px.bar(static4, x='Days Available', y='Price', title="Average price by availability"))
+    ],
+        style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly', 'padding': '20px'}
+    ),
+
+    html.Div(children=[
+        dcc.Graph(id='map9', figure=px.pie(static5, values='Price', names='Room Type', title='Total receipt by room type'))
+    ],
+        style={'display': 'flex', 'justify-content': 'center', 'padding': '20px'}
     )
 
 ], style={'font-family': 'DM Sans, sans-serif', 'padding': '20px', 'color': '#ffffff', 'background-color': '#232323'})
