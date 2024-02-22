@@ -18,22 +18,21 @@ filterwarnings('ignore', category=FutureWarning)
 
 
 @st.cache_data
-def load_model(model_name: str) -> any:
+def load_model(file_name: str) -> any:
 
     try:
-        model = joblib.load(f'{getcwd()}/../models/{model_name}_model.pkl')
+        model = joblib.load(f'{getcwd()}/../models/{file_name}_model.pkl')
+        return model
     except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
         print("Model not found or doesn't exists!")
         exit()
 
-    return model
-
 
 @st.cache_data
-def load_dataset(filename: str) -> pd.DataFrame:
+def load_dataset(file_name: str) -> pd.DataFrame:
 
     try:
-        df = pd.read_csv(f'{getcwd()}/../datasets/{filename}.csv')
+        df = pd.read_csv(f'{getcwd()}/../datasets/{file_name}.csv')
     except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
         print("Dataset not found or doesn't exists!")
         exit()
@@ -56,10 +55,6 @@ def load_dataset(filename: str) -> pd.DataFrame:
         'disponibilidade_365': "Days Available"
     })
     return df
-
-
-if 'df' not in st.session_state:
-    st.session_state['df'] = load_dataset('pricing')
 
 
 def validate_input(input_data: Dict) -> (bool, Dict):
@@ -131,7 +126,7 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 
     for col in instance.columns.values:
         if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
-            instance = discretize_values(instance, col)
+            instance = discretize_values(df=instance, column=col)
 
     # Gets the binning threshold file generated in preprocessing
     with open(f'{getcwd()}/../models/bins.json', 'r') as file:
@@ -143,7 +138,7 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
         instance[feature] = binned_feature
 
     # Prediction
-    model = joblib.load(f'{getcwd()}/../models/{algorithm}_model.pkl')
+    model = load_model(file_name=algorithm)
     prediction = model.predict(instance)
     price = round(prediction[0], 2)
 
@@ -152,11 +147,13 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 
 if __name__ == '__main__':
 
+    if 'df' not in st.session_state:
+        st.session_state['df'] = load_dataset(file_name='pricing')
+
     try:
-        st.sidebar.image('../assets/stock.png', width=280)
+        st.sidebar.image(f'{getcwd()}/../assets/stock.png', width=280)
     except (IsADirectoryError, NotADirectoryError, FileExistsError, FileNotFoundError):
         print("Image not found or doesn't exists!")
-        exit()
 
     # Property form
     form1 = st.form(key='options')
