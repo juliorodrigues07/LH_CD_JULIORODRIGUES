@@ -1,7 +1,6 @@
 from warnings import filterwarnings
 from datetime import datetime
 from typing import Dict
-from os import getcwd
 import numpy as np
 import json
 from sklearn.preprocessing import LabelEncoder
@@ -18,6 +17,7 @@ st.set_page_config(layout="wide", page_title="Rent Pricing", page_icon=":heavy_d
 filterwarnings('ignore', category=FutureWarning)
 
 
+@st.cache_data
 def load_img() -> any:
 
     img_file = 'stock.png'
@@ -27,10 +27,7 @@ def load_img() -> any:
     return img_file
 
 
-if 'img_file' not in st.session_state:
-    st.session_state['img_file'] = load_img()
-
-
+@st.cache_data
 def load_bins() -> any:
 
     bins_file = 'bins.json'
@@ -38,13 +35,6 @@ def load_bins() -> any:
     gdown.download(f'https://drive.google.com/uc?id={bins_id}', bins_file)
 
     return bins_file
-
-
-# Gets the binning threshold file generated in preprocessing
-if 'bins_file' not in st.session_state:
-    st.session_state['bins_file'] = load_bins()
-with open(st.session_state['bins_file'], 'r') as file:
-    bins = json.load(file)
 
 
 @st.cache_data
@@ -92,10 +82,6 @@ def load_dataset() -> pd.DataFrame:
         'disponibilidade_365': "Days Available"
     })
     return df
-
-
-if 'df' not in st.session_state:
-    st.session_state['df'] = load_dataset()
 
 
 def validate_input(input_data: Dict) -> (bool, Dict):
@@ -169,6 +155,10 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
         if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
             instance = discretize_values(instance, col)
 
+    # Gets the binning threshold file generated in preprocessing
+    with open(st.session_state['bins_file'], 'r') as file:
+        bins = json.load(file)
+
     # Binning mapping
     for feature in bins:
         binned_feature = np.digitize(instance[feature], bins[feature])
@@ -183,6 +173,15 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
 
 
 if __name__ == '__main__':
+
+    if 'df' not in st.session_state:
+        st.session_state['df'] = load_dataset()
+
+    if 'bins_file' not in st.session_state:
+        st.session_state['bins_file'] = load_bins()
+
+    if 'img_file' not in st.session_state:
+        st.session_state['img_file'] = load_img()
 
     st.sidebar.image(st.session_state['img_file'], width=280)
 
