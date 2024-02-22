@@ -65,8 +65,6 @@ if 'df' not in st.session_state:
 def validate_input(input_data: Dict) -> (bool, Dict):
 
     schema = {
-        'id': {'type': 'integer', 'required': False, 'empty': True},
-        'prop_name': {'type': 'string', 'required': False, 'empty': True},
         'host_id': {'type': 'integer', 'required': True, 'empty': False},
         'host_name': {'type': 'string', 'required': True, 'empty': False},
         'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Neighborhood'].unique()),
@@ -83,7 +81,7 @@ def validate_input(input_data: Dict) -> (bool, Dict):
         'monthly_reviews': {'type': 'float', 'min': 0.0, 'required': True, 'empty': False},
         'host_listings': {'type': 'integer', 'min': 1, 'required': True, 'empty': False},
         'availability': {'type': 'integer', 'min': 0, 'max': 365, 'required': True, 'empty': False},
-        'model_name': {'type': 'string', 'allowed': ['LightGBM', 'XGBoost', 'HistGradientBoosting'],
+        'model_name': {'type': 'string', 'allowed': ['LightGBM', 'XGBoost'],
                        'required': True, 'empty': False}
     }
     input_validator = Validator(schema)
@@ -112,8 +110,6 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     input_data.pop('model_name')
     instance = pd.DataFrame([input_data])
     instance = instance.rename(columns={
-        'id': 'ID',
-        'prop_name': 'Name',
         'host_id': 'Host ID',
         'host_name': 'Host Name',
         'borough': 'Neighborhood',
@@ -130,7 +126,6 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     })
 
     # Preprocessing and discretization
-    instance = instance.drop(['ID', 'Name'], axis='columns')
     instance['Last Review'] = pd.to_datetime(instance['Last Review'])
     instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
 
@@ -165,12 +160,11 @@ if __name__ == '__main__':
 
     # Property form
     form1 = st.form(key='options')
-    form1.title('NY Price Regressor')
+    form1.title('NY Price Predictor')
     form1.header('Property Specifications')
-    col1, col2 = form1.columns(2)
+    col1, col2, col3, col4 = form1.columns(4)
 
     # Inputs, buttons, select boxes, slider and warnings
-    prop_id = col1.number_input(label="Property ID", value=1, placeholder='Insert the number here...')
     host_id = col1.number_input(label="Host ID", value=1, placeholder='Insert the number here...')
 
     latitude = col1.number_input(label='Latitude', value=0.000000, placeholder='Insert the number here...')
@@ -179,37 +173,34 @@ if __name__ == '__main__':
     longitude = col1.number_input(label='Longitude', value=0.000000, placeholder='Insert the number here...')
     longitude_warning = col1.container()
 
-    min_nights = col1.number_input(label='Minimum Nights', value=1, placeholder='Insert the number here...')
-    minnights_warning = col1.container()
-
-    reviews = col1.number_input(label='Number of Reviews', value=0, placeholder='Insert the number here...')
-    reviews_warning = col1.container()
-
-    monthly_reviews = col1.number_input(label='Monthly Reviews Rate', value=0.0, placeholder='Insert the number here...')
-    monthlyreviews_warning = col1.container()
-
-    prop_name = col2.text_input(label='Property Name', placeholder='Insert the name here...').strip()
-
     host_name = col2.text_input(label='Host Name', placeholder='Insert the name here...').strip()
     hostname_warning = col2.container()
 
-    borough = col2.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
-    district = col2.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
-    room_type = col2.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
-    last_review = col2.date_input(label='Last Review Date', value=None, max_value=datetime.now(), format="DD/MM/YYYY")
+    min_nights = col2.number_input(label='Minimum Nights', value=1, placeholder='Insert the number here...')
+    minnights_warning = col2.container()
 
     host_listings = col2.number_input(label='Listings per Host', value=1, placeholder='Insert the number here...')
     hostlistings_warning = col2.container()
 
-    availability = form1.slider(label='Days Available per Year', min_value=0, max_value=365, value=70)
+    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
+    district = col3.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
+    room_type = col3.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
 
-    algorithm = form1.selectbox(label='Select the ML Algorithm', options=['LightGBM', 'XGBoost', 'HistGradientBoosting'])
+    reviews = col4.number_input(label='Number of Reviews', value=0, placeholder='Insert the number here...')
+    reviews_warning = col4.container()
+
+    monthly_reviews = col4.number_input(label='Monthly Reviews Rate', value=0.0, placeholder='Insert the number here...')
+    monthlyreviews_warning = col4.container()
+
+    last_review = col4.date_input(label='Last Review Date', value=None, max_value=datetime.now(), format="DD/MM/YYYY")
+
+    availability = form1.slider(label='Days Available per Year', min_value=0, max_value=365, value=70)
+    algorithm = form1.selectbox(label='Select the ML Algorithm', options=['LightGBM', 'XGBoost'])
     submit_button = form1.form_submit_button('Predict')
+
     prediction = st.container()
 
     input_data = {
-        'id': prop_id,
-        'prop_name': prop_name,
         'host_id': host_id,
         'host_name': host_name,
         'borough': borough,
@@ -232,35 +223,31 @@ if __name__ == '__main__':
             model_name = 'lgbm'
         case 'XGBoost':
             model_name = 'xgb'
-        case 'HistGradientBoosting':
-            model_name = 'histgb'
         case _:
             print("ML model not available or doesn't exists")
             exit()
 
     check, errors = validate_input(input_data=input_data)
     if submit_button is True and check is True:
-        print(input_data)
         price = predict_instance(input_data=input_data, algorithm=model_name)
         prediction.success(f'Price: US$ {price}')
 
     elif submit_button is True and check is False:
-        for key in input_data.keys():
-            if key in errors.keys():
-                match key:
-                    case 'latitude':
-                        latitude_warning.error('Latitude values must be between -90 and 90!')
-                    case 'longitude':
-                        longitude_warning.error('Longitude values must be between -180 and 180!')
-                    case 'min_nights':
-                        minnights_warning.error('Minimum nights must be greater than 0!')
-                    case 'reviews':
-                        reviews_warning.error('Number of reviews must not be negative!')
-                    case 'monthly_reviews':
-                        monthlyreviews_warning.error('Monthly reviews rate must not be negative!')
-                    case 'host_name':
-                        hostname_warning.error('Host name cannot be empty!')
-                    case 'host_listings':
-                        hostlistings_warning.error('Number of listings per host must be greater than 0!')
-                    case _:
-                        print("Data doesn't exist!")
+        for key in errors.keys():
+            match key:
+                case 'latitude':
+                    latitude_warning.error('Latitude values must be between -90 and 90!')
+                case 'longitude':
+                    longitude_warning.error('Longitude values must be between -180 and 180!')
+                case 'min_nights':
+                    minnights_warning.error('Minimum nights must be greater than 0!')
+                case 'reviews':
+                    reviews_warning.error('Number of reviews must not be negative!')
+                case 'monthly_reviews':
+                    monthlyreviews_warning.error('Monthly reviews rate must not be negative!')
+                case 'host_name':
+                    hostname_warning.error('Host name cannot be empty!')
+                case 'host_listings':
+                    hostlistings_warning.error('Number of listings per host must be greater than 0!')
+                case _:
+                    print("Data doesn't exist!")
