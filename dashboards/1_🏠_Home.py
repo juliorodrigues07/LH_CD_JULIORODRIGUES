@@ -103,6 +103,9 @@ def discretize_values(df: pd.DataFrame, column: str) -> pd.DataFrame:
 def predict_instance(input_data: Dict, algorithm: str) -> float:
 
     input_data.pop('model_name')
+    if input_data['last_review'] is None:
+        input_data['last_review'] = 'N/A'
+
     instance = pd.DataFrame([input_data])
     instance = instance.rename(columns={
         'host_id': 'Host ID',
@@ -120,13 +123,24 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
         'availability': 'Days Available'
     })
 
+    try:
+        instance = instance.drop(['ID', 'Name', 'Price'], axis='columns')
+    except KeyError:
+        pass
+
     # Preprocessing and discretization
-    instance['Last Review'] = pd.to_datetime(instance['Last Review'])
-    instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+    if not is_integer_dtype(instance['Last Review']) and input_data['last_review'] != 'N/A':
+        instance['Last Review'] = pd.to_datetime(instance['Last Review'])
+        instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+
+    with open(f'{getcwd()}/../models/matches.json', 'r') as encode_file:
+        encodes = json.load(encode_file)
 
     for col in instance.columns.values:
         if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
-            instance = discretize_values(df=instance, column=col)
+
+            # Gets the associated values to the column keys (-1 if the key isn't known)
+            instance[col] = instance[col].apply(lambda x: encodes[col].get(x, -1))
 
     # Gets the binning threshold file generated in preprocessing
     with open(f'{getcwd()}/../models/bins.json', 'r') as file:
@@ -135,7 +149,7 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     # Binning mapping
     for feature in bins:
         binned_feature = np.digitize(instance[feature], bins[feature])
-        instance[feature] = binned_feature
+        instance[feature] = binned_feature - 1
 
     # Prediction
     model = load_model(file_name=algorithm)
