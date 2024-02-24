@@ -1,0 +1,18 @@
+{
+    "Optimal Number": "13",
+    "Best Features": [
+        "Host ID",
+        "Host Name",
+        "Borough",
+        "District",
+        "Latitude",
+        "Longitude",
+        "Room Type",
+        "Minimum Nights",
+        "Reviews",
+        "Last Review",
+        "Monthly Reviews",
+        "Number of Listings",
+        "Days Available"
+    ]
+}
