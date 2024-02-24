@@ -18,23 +18,10 @@ filterwarnings('ignore', category=FutureWarning)
 
 
 @st.cache_data
-def load_img() -> any:
+def load_file(file_id: str, file_name: str) -> any:
 
-    img_file = 'stock.png'
-    img_id = '1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d'
-    gdown.download(f'https://drive.google.com/uc?id={img_id}', img_file)
-
-    return img_file
-
-
-@st.cache_data
-def load_bins() -> any:
-
-    bins_file = 'bins.json'
-    bins_id = '100l-8fZth8oueQIEExsiGy4qj4FGA2QP'
-    gdown.download(f'https://drive.google.com/uc?id={bins_id}', bins_file)
-
-    return bins_file
+    gdown.download(f'https://drive.google.com/uc?id={file_id}', file_name)
+    return file_name
 
 
 @st.cache_data
@@ -68,7 +55,7 @@ def load_dataset() -> pd.DataFrame:
         'nome': 'Name',
         'host_id': 'Host ID',
         'host_name': 'Host Name',
-        'bairro_group': 'Neighborhood',
+        'bairro_group': 'Borough',
         'bairro': 'District',
         'latitude': 'Latitude',
         'longitude': 'Longitude',
@@ -89,7 +76,7 @@ def validate_input(input_data: Dict) -> (bool, Dict):
     schema = {
         'host_id': {'type': 'integer', 'required': True, 'empty': False},
         'host_name': {'type': 'string', 'required': True, 'empty': False},
-        'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Neighborhood'].unique()),
+        'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Borough'].unique()),
                     'required': True, 'empty': False},
         'district': {'type': 'string', 'allowed': list(st.session_state['df']['District'].unique()),
                      'required': True, 'empty': False},
@@ -130,11 +117,14 @@ def discretize_values(df: pd.DataFrame, column: str) -> pd.DataFrame:
 def predict_instance(input_data: Dict, algorithm: str) -> float:
 
     input_data.pop('model_name')
+    if input_data['last_review'] is None:
+        input_data['last_review'] = 'N/A'
+
     instance = pd.DataFrame([input_data])
     instance = instance.rename(columns={
         'host_id': 'Host ID',
         'host_name': 'Host Name',
-        'borough': 'Neighborhood',
+        'borough': 'Borough',
         'district': 'District',
         'latitude': 'Latitude',
         'longitude': 'Longitude',
@@ -148,21 +138,27 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     })
 
     # Preprocessing and discretization
-    instance['Last Review'] = pd.to_datetime(instance['Last Review'])
-    instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+    if not is_integer_dtype(instance['Last Review']) and input_data['last_review'] != 'N/A':
+        instance['Last Review'] = pd.to_datetime(instance['Last Review'])
+        instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+
+    with open(st.session_state['matches_file'], 'r') as encode_file:
+        encodes = json.load(encode_file)
 
     for col in instance.columns.values:
         if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
-            instance = discretize_values(instance, col)
+
+            # Gets the associated values to the column keys (-1 if the key isn't known)
+            instance[col] = instance[col].apply(lambda x: encodes[col].get(x, -1))
 
     # Gets the binning threshold file generated in preprocessing
-    with open(st.session_state['bins_file'], 'r') as file:
-        bins = json.load(file)
+    with open(st.session_state['bins_file'], 'r') as bins_file:
+        bins = json.load(bins_file)
 
     # Binning mapping
     for feature in bins:
         binned_feature = np.digitize(instance[feature], bins[feature])
-        instance[feature] = binned_feature
+        instance[feature] = binned_feature - 1
 
     # Prediction
     model = load_model(model_name=algorithm)
@@ -177,11 +173,14 @@ if __name__ == '__main__':
     if 'df' not in st.session_state:
         st.session_state['df'] = load_dataset()
 
+    if 'matches_file' not in st.session_state:
+        st.session_state['matches_file'] = load_file(file_id='1CxBruJu-QcJjQ5jfrABy5a77kghf4FSp', file_name='matches.json')
+
     if 'bins_file' not in st.session_state:
-        st.session_state['bins_file'] = load_bins()
+        st.session_state['bins_file'] = load_file(file_id='100l-8fZth8oueQIEExsiGy4qj4FGA2QP', file_name='bins.json')
 
     if 'img_file' not in st.session_state:
-        st.session_state['img_file'] = load_img()
+        st.session_state['img_file'] = load_file(file_id='1CxFL4CYXq7wN7qPOeq1Tojp4G2aH1Q1d', file_name='stock.png')
 
     st.sidebar.image(st.session_state['img_file'], width=280)
 
@@ -209,7 +208,7 @@ if __name__ == '__main__':
     host_listings = col2.number_input(label='Listings per Host', value=1, placeholder='Insert the number here...')
     hostlistings_warning = col2.container()
 
-    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
+    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Borough'].unique())
     district = col3.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
     room_type = col3.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
 
