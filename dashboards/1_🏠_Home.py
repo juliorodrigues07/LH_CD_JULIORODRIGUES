@@ -41,7 +41,7 @@ def load_dataset(file_name: str) -> pd.DataFrame:
         'nome': 'Name',
         'host_id': 'Host ID',
         'host_name': 'Host Name',
-        'bairro_group': 'Neighborhood',
+        'bairro_group': 'Borough',
         'bairro': 'District',
         'latitude': 'Latitude',
         'longitude': 'Longitude',
@@ -62,7 +62,7 @@ def validate_input(input_data: Dict) -> (bool, Dict):
     schema = {
         'host_id': {'type': 'integer', 'required': True, 'empty': False},
         'host_name': {'type': 'string', 'required': True, 'empty': False},
-        'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Neighborhood'].unique()),
+        'borough': {'type': 'string', 'allowed': list(st.session_state['df']['Borough'].unique()),
                     'required': True, 'empty': False},
         'district': {'type': 'string', 'allowed': list(st.session_state['df']['District'].unique()),
                      'required': True, 'empty': False},
@@ -107,7 +107,7 @@ def predict_instance(input_data: Dict, algorithm: str) -> float:
     instance = instance.rename(columns={
         'host_id': 'Host ID',
         'host_name': 'Host Name',
-        'borough': 'Neighborhood',
+        'borough': 'Borough',
         'district': 'District',
         'latitude': 'Latitude',
         'longitude': 'Longitude',
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     host_listings = col2.number_input(label='Listings per Host', value=1, placeholder='Insert the number here...')
     hostlistings_warning = col2.container()
 
-    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Neighborhood'].unique())
+    borough = col3.selectbox(label='Select the Borough', options=st.session_state['df']['Borough'].unique())
     district = col3.selectbox(label='Select the District', options=st.session_state['df']['District'].unique())
     room_type = col3.selectbox(label='Select the Room Type', options=st.session_state['df']['Room Type'].unique())
 
