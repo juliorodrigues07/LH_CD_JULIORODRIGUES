@@ -1,11 +1,64 @@
 from os import getcwd
-import pandas as pd
-from datamining.ml_methods import holdout_split
+import json
+
+from utils.CustomEncoder import CustomEncoder
+
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import RFECV
+from pandas.api.types import is_integer_dtype
+from pandas.api.types import is_float_dtype
+import pandas as pd
+import numpy as np
+
+
+def optimize_memory(df: pd.DataFrame, file_name: str = 'optimized',
+                    object_cols: list = [], in_place: bool = False) -> pd.DataFrame | None:
+
+    if not in_place:
+        df = df.copy()
+
+    memory = df.memory_usage(deep=True)
+    print(f'Before optimization: {round(memory.sum() / (1024 ** 2), 2)} MB')
+
+    # Downcast int columns (e.g., int64 -> int32)
+    int_cols = df.select_dtypes(include=['int']).columns
+    for col in int_cols:
+        df[col] = df[[col]].apply(pd.to_numeric, downcast='integer')
+
+    # Downcast float columns (e.g., float64 -> float32)
+    float_cols = df.select_dtypes(include=['float']).columns
+    for col in float_cols:
+        df[col] = df[[col]].apply(pd.to_numeric, downcast='float')
+
+    # Change object type columns to category type to save space
+    for col in object_cols:
+        if col in df.columns and df[col].dtype == 'object':
+            df[col] = df[col].astype('category')
+
+    memory = df.memory_usage(deep=True)
+    print(f'After optimization:  {round(memory.sum() / (1024 ** 2), 2)} MB\n')
+    df.to_parquet(f'{getcwd()}/../datasets/{file_name}.parquet')
+
+    if in_place:
+        return None
+    else:
+        return df
+
+
+def discard_features(df: pd.DataFrame) -> pd.DataFrame:
+
+    features = df.columns.values
+
+    for col in features:
+        proportion = round(len(df[col].unique()) / len(df[col]), 2)
+
+        # Discard a column if it has more than 90% of unique values
+        if proportion * 100 > 90:
+            df = df.drop([col], axis='columns')
+
+    return df
 
 
 def discretize_values(df: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -24,96 +77,105 @@ def normalization(df: pd.DataFrame) -> pd.DataFrame:
     return attr_scaler.fit_transform(df)
 
 
-def basic_feature_selection(df: pd.DataFrame) -> pd.DataFrame:
+def predict_missing(df: pd.DataFrame, algorithm: any, attributes: pd.DataFrame,
+                    classes: pd.DataFrame, rows_to_predict: pd.DataFrame,
+                    raw_rows: pd.DataFrame, column: str) -> pd.DataFrame:
 
-    features = df.columns.values
-    for feat in features:
-        proportion = round(len(df[feat].unique()) / len(df[feat]), 2)
+    normalized = normalization(df=attributes)
 
-        # Discard a column if it has more than 90% of unique values
-        if proportion * 100 > 90:
-            df = df.drop([feat], axis='columns')
-
-    return df
-
-
-def fit_model(df, algorithm, training, y_training, rows_to_predict, raw_rows, column) -> pd.DataFrame:
-
-    normalized = normalization(df=training)
-
-    algorithm.fit(normalized, y_training[column])
+    algorithm.fit(normalized, classes[column])
     predictions = algorithm.predict(normalization(df=rows_to_predict))
     raw_rows[column] = predictions
+
+    # Uniformly encodes the missing value column if it's categorical before returning
+    if not is_float_dtype(df[column]) and not is_integer_dtype(df[column]):
+        df = discretize_values(df=df.copy(), column=column)
 
     # Reappends the recent predicted rows to the original dataset without changing order
     return pd.concat([df, raw_rows], sort=False).sort_index()
 
 
-def regression_fill(df: pd.DataFrame, column: str) -> pd.DataFrame:
+def split_missing(df: pd.DataFrame, column: str, ml_type: str) -> pd.DataFrame:
 
-    # For real values uses Linear Regression to predict missing values
+    whole_dataset = df.copy()
+
+    # Gets the rows where the selected column has missing values (predict)
     fill_data = df[df[column].isnull()]
     rows_to_predict = fill_data.drop([column], axis='columns')
     raw_rows = rows_to_predict.copy()
 
-    # Discards rows where the selected column has missing value
+    # Discards rows where the selected column has missing values (training)
     df = df.dropna(axis='index', subset=column)
-    features = df.drop([column], axis='columns')
-    y_training = discretize_values(df, column)
+    attributes = df.drop([column], axis='columns')
+    classes = discretize_values(df=df.copy(), column=column)
 
-    # Encodes categorical data
-    training = features.copy()
-    for col in features.columns.values:
-        training = discretize_values(df=training, column=col)
-        rows_to_predict = discretize_values(df=rows_to_predict, column=col)
+    '''
+    Encodes categorical data (only columns with missing values need it,
+    since the others have been previously encoded)
+    '''
+    for col in attributes.columns.values:
+        if whole_dataset[col].isnull().sum() > 0:
+            attributes = discretize_values(df=attributes, column=col)
+            rows_to_predict = discretize_values(df=rows_to_predict, column=col)
 
-    lr_model = LinearRegression()
-    concat_df = fit_model(df=df, algorithm=lr_model, training=training,
-                          y_training=y_training, rows_to_predict=rows_to_predict,
-                          raw_rows=raw_rows, column=column)
+    # Linear Regression for real values and Decision Tree for integers
+    model = None
+    if ml_type == 'classifier':
+        model = DecisionTreeClassifier()
+    elif ml_type == 'regressor':
+        model = LinearRegression()
+    else:
+        print('Model incorrectly specified! [classifier, regressor]')
+        return whole_dataset
 
-    return concat_df
-
-
-def classification_fill(df: pd.DataFrame, column: str) -> pd.DataFrame:
-
-    #For integer or categorical values uses Decistion Tree classifier to predict missing values
-    fill_data = df[df[column].isnull()]
-    rows_to_predict = fill_data.drop([column], axis='columns')
-    raw_rows = rows_to_predict.copy()
-
-    df = df.dropna(axis='index', subset=column)
-    features = df.drop([column], axis='columns')
-    y_training = discretize_values(df, column)
-
-    training = features.copy()
-    for col in features.columns.values:
-        training = discretize_values(df=training, column=col)
-        rows_to_predict = discretize_values(df=rows_to_predict, column=col)
-
-    dt_model = DecisionTreeClassifier()
-    concat_df = fit_model(df=df, algorithm=dt_model, training=training,
-                          y_training=y_training, rows_to_predict=rows_to_predict,
-                          raw_rows=raw_rows, column=column)
+    concat_df = predict_missing(df=df, algorithm=model, attributes=attributes,
+                                classes=classes, rows_to_predict=rows_to_predict,
+                                raw_rows=raw_rows, column=column)
 
     return concat_df
 
 
 def fill_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 
+    # Last Review column cardinality will be reduced by filtering the date only by year and month
+    df['Last Review'] = pd.to_datetime(df['Last Review'])
+    df['Last Review'] = df['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+
+    # Null values have to be "properly" inserted again, and datetime type converted to category
+    df['Last Review'] = df['Last Review'].astype('category')
+    df = df.replace({'Last Review': {'nan-nan': np.nan}})
+
+    # Rows with 0 reviews have missing values in Monthly Reviews and Last Review, which is expected
+    missing = len(df.query('`Last Review`.isna() & `Monthly Reviews`.isna() & Reviews == 0'))
+    print(f'{missing} rows with no reviews, no last review date and no monthly reviews rate.')
+
+    # Therefore, we can reliably fill these missing values with N/A to last review date and 0 monthly reviews rate
+    df['Last Review'] = df['Last Review'].cat.add_categories('N/A')
+    df['Last Review'] = df['Last Review'].fillna('N/A')
+    df['Monthly Reviews'] = df['Monthly Reviews'].fillna(0)
+
+    # Discretizes columns which have categorical values and no missing ones
+    features = df.columns.values
+    for col in features:
+        if df[col].isnull().sum() == 0 \
+                and not is_float_dtype(df[col]) \
+                and not is_integer_dtype(df[col]):
+            df = discretize_values(df=df, column=col)
+
     '''
     Fills missing values by predicting based on existing data
     It only applies this method if a column has at maximum 30% of its values missing
     '''
     features = df.columns.values
-    for feat in features:
-        if df[feat].isnull().sum() > 0 and df[feat].isnull().sum() / len(df[feat]) < 0.3:
+    for col in features:
+        if df[col].isnull().sum() > 0 and df[col].isnull().sum() / len(df[col]) < 0.3:
 
-            if df[feat].dtype == float:
-                df = regression_fill(df=df, column=feat)
+            if is_float_dtype(df[col]):
+                df = split_missing(df=df, column=col, ml_type='regressor')
             else:
-                df = classification_fill(df=df, column=feat)
+                df = split_missing(df=df, column=col, ml_type='classifier')
 
+    print(df.isnull().sum())
     return df
 
 
@@ -135,16 +197,17 @@ def equal_frequency_binning(df: pd.DataFrame) -> pd.DataFrame:
     # Gets the bins to apply preprocessing on the example later
     bins = dict()
     n_bins = pd.qcut(df['Host Name'], q=15, retbins=True)
-    bins['Host Name'] = n_bins[1]
+    bins['Host Name'] = list(n_bins[1])
     n_bins = pd.qcut(df['Host ID'], q=80, retbins=True)
-    bins['Host ID'] = n_bins[1]
+    bins['Host ID'] = list(n_bins[1])
     n_bins = pd.qcut(df['Latitude'], q=25, retbins=True)
-    bins['Latitude'] = n_bins[1]
+    bins['Latitude'] = list(n_bins[1])
     n_bins = pd.qcut(df['Longitude'], q=25, retbins=True)
-    bins['Longitude'] = n_bins[1]
+    bins['Longitude'] = list(n_bins[1])
 
-    # Remove outlier rows based on price (first and third quantiles)
-    df = remove_outliers(df, 'Price')
+    with open(f'{getcwd()}/../models/bins.json', 'w') as file:
+        dump_file = json.dumps(bins, indent=4)
+        file.write(dump_file)
 
     # Equal frequency binning on scattered features
     categorical_size = [x for x in range(15)]
@@ -159,41 +222,97 @@ def equal_frequency_binning(df: pd.DataFrame) -> pd.DataFrame:
     categorical_size = [x for x in range(25)]
     df['Longitude'] = pd.qcut(df['Longitude'], q=25, labels=categorical_size)
 
-    # Discretize categorical features
-    for col in df.columns.values:
-        if df[col].dtypes != int and df[col].dtypes != float:
-            df = discretize_values(df=df, column=col)
-
-    # df.to_csv(f'{getcwd()}/../datasets/preprocessed.csv', index=False)
     return df
 
 
-def feature_selection(attributes, classes, cv_estimator) -> None:
+def generate_encodings(df: pd.DataFrame) -> None:
 
-    # Recursive feature selection with CV
-    x_train, _, y_train, _ = holdout_split(attributes=attributes, classes=classes)
-    cv_estimator.fit(x_train, y_train)
+    # Unused features and target
+    try:
+        df = df.drop(['ID', 'Name', 'Price'], axis='columns')
+    except KeyError:
+        pass
 
-    cv_selector = RFECV(cv_estimator, cv=5, step=1, scoring='r2', verbose=False, n_jobs=-1)
-    cv_selector = cv_selector.fit(x_train, y_train)
-    rfecv_mask = cv_selector.get_support()
+    # Reducing Last Review cardinality
+    df['Last Review'] = pd.to_datetime(df['Last Review'])
+    df['Last Review'] = df['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
 
-    rfecv_features = list()
-    for check, feature in zip(rfecv_mask, x_train.columns):
-        if check:
-            rfecv_features.append(feature)
+    # Reapplying null values and category type (necessary for adding categories)
+    df['Last Review'] = df['Last Review'].astype('category')
+    df = df.replace({'Last Review': {'nan-nan': np.nan}})
 
-    print(f'Original number of features: {len(attributes.columns.values)}')
-    print(f'Features: {list(attributes.columns.values)}\n')
+    # Filling missing values
+    df['Last Review'] = df['Last Review'].cat.add_categories('N/A')
+    df['Last Review'] = df['Last Review'].fillna('N/A')
+    df['Monthly Reviews'] = df['Monthly Reviews'].fillna(0)
 
-    print(f'Optimal number of features: {cv_selector.n_features_}')
-    print(f'Best features: {rfecv_features}')
+    # Discarding rows with missing values (at this point, only Host Name column has)
+    df = df.dropna(axis='index', subset='Host Name')
 
-    with open(f'{getcwd()}/../models/best_features.txt', 'w') as file:
-        file.write(f'Optimal number of features: {cv_selector.n_features_}\n')
-        file.write(f'Best features: {rfecv_features}')
+    matches = dict()
+    encoder = LabelEncoder()
+    for col in df.columns.values:
 
-    save_df = attributes.copy()
-    save_df.drop(rfecv_features, axis='columns')
-    save_df['Price'] = classes
-    save_df.to_csv(f'{getcwd()}/../datasets/feature_selected.csv', index=False)
+        # Discretizes only categorical features
+        if not is_float_dtype(df[col]) and not is_integer_dtype(df[col]):
+            encoder.fit(df[col])
+
+            # Stores each column mapping (label: value)
+            col_matches = dict(zip(encoder.classes_, encoder.transform(encoder.classes_)))
+            matches[col] = col_matches
+
+    with open(f'{getcwd()}/../models/matches.json', 'w') as json_file:
+        # ASCII to deal with distinct data (e.g., japanese characters, emojis, ...)
+        matches_file = json.dumps(matches, indent=4, cls=CustomEncoder, ensure_ascii=False)
+        json_file.write(matches_file)
+
+
+def preprocess_instance(instance: pd.DataFrame) -> pd.DataFrame:
+
+    instance = instance.rename(columns={
+        'id': 'ID',
+        'nome': 'Name',
+        'host_id': 'Host ID',
+        'host_name': 'Host Name',
+        'bairro_group': 'Borough',
+        'bairro': 'District',
+        'latitude': 'Latitude',
+        'longitude': 'Longitude',
+        'room_type': 'Room Type',
+        'price': 'Price',
+        'minimo_noites': 'Minimum Nights',
+        'numero_de_reviews': 'Reviews',
+        'ultima_review': 'Last Review',
+        'reviews_por_mes': 'Monthly Reviews',
+        'calculado_host_listings_count': 'Number of Listings',
+        'disponibilidade_365': "Days Available"
+    })
+
+    try:
+        instance = instance.drop(['ID', 'Name', 'Price'], axis='columns')
+    except KeyError:
+        pass
+
+    if not is_integer_dtype(instance['Last Review']):
+        instance['Last Review'] = pd.to_datetime(instance['Last Review'])
+        instance['Last Review'] = instance['Last Review'].apply(lambda row: f'{str(row.year)}-{str(row.month)}')
+
+    with open(f'{getcwd()}/../models/matches.json', 'r') as encode_file:
+        encodes = json.load(encode_file)
+
+    for col in instance.columns.values:
+        if not is_float_dtype(instance[col]) and not is_integer_dtype(instance[col]):
+
+            # Gets the associated values to the column keys (-1 if the key isn't known)
+            instance[col] = instance[col].apply(lambda x: encodes[col].get(x, -1))
+
+    # Gets the binning threshold file generated in preprocessing
+    with open(f'{getcwd()}/../models/bins.json', 'r') as file:
+        bins = json.load(file)
+
+    # Binning mapping
+    for feature in bins:
+        binned_feature = np.digitize(instance[feature], bins[feature])
+        instance[feature] = binned_feature - 1
+
+    return instance
