@@ -1,11 +1,14 @@
+# Native libraries
 from tempfile import mkdtemp
 from shutil import rmtree
 from os import getcwd
 import json
 
+# Local source code
 from datamining.data_visualization import plot_selection_graph
 from datamining.data_visualization import plot_learning_curve
 
+# External libraries
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import RepeatedKFold
@@ -115,7 +118,6 @@ def fine_tuning(attributes: pd.DataFrame, classes: pd.DataFrame,
         file.write(dump_file)
 
     print(f'{alg_name} best hyperparameters: {grid_search.best_params_}\n')
-    return grid_search.best_estimator_
 
 
 def tuned_regressions(attributes: pd.DataFrame, classes: pd.DataFrame) -> None:

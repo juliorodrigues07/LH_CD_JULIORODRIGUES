@@ -1,3 +1,4 @@
+# Native libraries
 from warnings import filterwarnings
 from tempfile import mkdtemp
 from shutil import rmtree
@@ -5,6 +6,7 @@ from os.path import isdir
 from os import getcwd
 from os import mkdir
 
+# Local source code
 from datamining.data_visualization import plot_correlation_matrix
 from datamining.data_visualization import plot_feature_importance
 from datamining.data_visualization import analyze_investment
@@ -31,6 +33,7 @@ from datamining.ml_methods import paired_ttest
 from datamining.ml_methods import fine_tuning
 from utils.RfecvPipeline import RfecvPipeline
 
+# External libraries
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import RepeatedKFold

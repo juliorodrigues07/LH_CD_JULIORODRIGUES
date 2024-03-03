@@ -1,8 +1,11 @@
+# Native libraries
 from os import getcwd
 import json
 
+# Local source code
 from utils.CustomEncoder import CustomEncoder
 
+# External libraries
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler

@@ -1,7 +1,10 @@
+# Native libraries
 from os import getcwd
 
+# Local source code
 from datamining.preprocessing import discretize_values
 
+# External libraries
 from sklearn.model_selection import learning_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
