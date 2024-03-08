@@ -1,0 +1,7 @@
+{
+    "lgbm": {
+        "regressor__learning_rate": 0.11,
+        "regressor__max_depth": 9,
+        "regressor__n_estimators": 150
+    }
+}

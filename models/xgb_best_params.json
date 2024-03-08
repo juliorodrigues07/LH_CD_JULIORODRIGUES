@@ -1,0 +1,7 @@
+{
+    "xgb": {
+        "regressor__learning_rate": 0.11,
+        "regressor__max_depth": 6,
+        "regressor__n_estimators": 50
+    }
+}
