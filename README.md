@@ -38,11 +38,11 @@ In this section, you can see the interactive and static dashboards screens made 
 
 1. Clone the repository
 
-       git clone -b deploy git@github.com:juliorodrigues07/LH_CD_JULIORODRIGUES.git
+       git clone -b deploy https://github.com/juliorodrigues07/ny_rent_pricing.git
 
-2. Unzip the repository
+2. Enter the repository's directory
 
-       unzip LH_CD_JULIORODRIGUES-deploy.zip && cd LH_CD_JULIORODRIGUES-deploy
+       cd ny_rent_pricing
 
 2. Create a virtual environment
 
