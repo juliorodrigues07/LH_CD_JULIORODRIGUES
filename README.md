@@ -7,7 +7,7 @@
 
 - If you want to see the deployed application, click down below and feel free to test the models with your own instances, interact with dynamic dashboards about the dataset or visualize static ones:
 
-     - **Deploy**: [![Deploy](https://img.shields.io/website-up-down-green-red/http/monip.org.svg)](https://rent-pricing.streamlit.app/)
+     - **Deploy**: [![Deploy](https://img.shields.io/website-up-down-green-red/http/monip.org.svg)](https://ny-rent-pricing.streamlit.app/)
  
 # 1. Requirements
 
